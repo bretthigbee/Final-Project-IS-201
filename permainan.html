@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sportle</title>
+  <style>
+    :root{
+      --tile: rgba(255,255,255,.92);
+      --tile-border: rgba(17,24,39,.18);
+      --text: #0f172a;
+      --muted: rgba(15,23,42,.72);
+
+      --absent: #94a3b8;   /* gray */
+      --present: #f59e0b;  /* yellow */
+      --correct: #22c55e;  /* green */
+
+      --panel: rgba(255,255,255,.78);
+      --panel-border: rgba(255,255,255,.35);
+      --shadow: 0 14px 40px rgba(2,6,23,.28);
+      --radius: 16px;
+
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+    }
+
+    *{ box-sizing: border-box; }
+    html, body{ height: 100%; }
+    body{
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      overflow: hidden; /* keep everything on one screen */
+    }
+
+    /* ===== Dynamic backgrounds ===== */
+    .bg-football{
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0px, rgba(255,255,255,.18) 2px, transparent 2px, transparent 70px),
+        repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0px, rgba(255,255,255,.04) 60px, transparent 60px, transparent 120px),
+        radial-gradient(900px 500px at 20% -10%, rgba(34,197,94,.30), transparent 60%),
+        radial-gradient(900px 500px at 90% 0%, rgba(16,185,129,.22), transparent 55%),
+        linear-gradient(180deg, #0b5d2a, #073f1d);
+      background-attachment: fixed;
+    }
+    .bg-basketball{
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,.10) 0px, rgba(255,255,255,.10) 2px, transparent 2px, transparent 120px),
+        repeating-linear-gradient(0deg, rgba(255,255,255,.08) 0px, rgba(255,255,255,.08) 2px, transparent 2px, transparent 140px),
+        radial-gradient(900px 500px at 15% -10%, rgba(249,115,22,.28), transparent 55%),
+        radial-gradient(900px 500px at 90% 0%, rgba(245,158,11,.22), transparent 55%),
+        linear-gradient(180deg, #b45309, #7c2d12);
+      background-attachment: fixed;
+    }
+    .bg-baseball{
+      background:
+        linear-gradient(45deg, rgba(255,255,255,.14) 0 2px, transparent 2px 100%),
+        linear-gradient(-45deg, rgba(255,255,255,.14) 0 2px, transparent 2px 100%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0px, rgba(255,255,255,.06) 70px, transparent 70px, transparent 140px),
+        radial-gradient(900px 500px at 20% -10%, rgba(34,197,94,.20), transparent 60%),
+        radial-gradient(900px 500px at 95% 0%, rgba(59,130,246,.18), transparent 55%),
+        linear-gradient(180deg, #166534, #064e3b);
+      background-attachment: fixed;
+    }
+    .bg-hockey{
+      background:
+        repeating-linear-gradient(0deg, rgba(2,132,199,.18) 0px, rgba(2,132,199,.18) 2px, transparent 2px, transparent 90px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.10) 0px, rgba(255,255,255,.10) 2px, transparent 2px, transparent 120px),
+        radial-gradient(900px 500px at 18% -10%, rgba(2,132,199,.25), transparent 60%),
+        radial-gradient(900px 500px at 90% 0%, rgba(99,102,241,.16), transparent 55%),
+        linear-gradient(180deg, #e2e8f0, #cbd5e1);
+      background-attachment: fixed;
+    }
+
+    .theme-fade::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,.18);
+      pointer-events: none;
+      animation: fadeOverlay 260ms ease-out;
+    }
+    @keyframes fadeOverlay{
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* ===== Layout ===== */
+    .wrap{
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    header{
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.32);
+      border-bottom: 1px solid rgba(255,255,255,.22);
+    }
+    .topbar{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: .55rem 1rem;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: .75rem;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:.6rem;
+      min-width: 200px;
+    }
+    .logo{
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #22c55e, #06b6d4);
+      box-shadow: 0 0 0 6px rgba(255,255,255,.18);
+    }
+    .brand h1{
+      margin:0;
+      font-size: 1rem;
+      letter-spacing: .2px;
+      line-height: 1.1;
+    }
+    .brand span{
+      display:block;
+      font-size: .8rem;
+      color: rgba(15,23,42,.70);
+      font-weight: 650;
+      margin-top: .1rem;
+    }
+
+    .nav{
+      display:flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      justify-content:flex-end;
+      align-items:center;
+    }
+    .nav a{
+      text-decoration:none;
+      font-weight: 800;
+      color: rgba(15,23,42,.88);
+      padding: .25rem .5rem;
+      border-radius: 12px;
+      background: rgba(255,255,255,.34);
+      border: 1px solid rgba(255,255,255,.22);
+      transition: background-color 150ms ease, transform 150ms ease;
+      font-size: .9rem;
+    }
+    .nav a:hover{ background: rgba(255,255,255,.55); transform: translateY(-1px); }
+
+    main{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding: .6rem 1rem;
+      min-height: 0;
+    }
+
+    /* ===== Panel (keeps full board + keyboard visible) ===== */
+    .panel{
+      width: min(620px, 96vw);
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: .75rem .85rem .7rem;
+
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: .5rem;
+
+      max-height: calc(100vh - 118px);
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .meta{
+      display:flex;
+      justify-content:space-between;
+      gap: .75rem;
+      align-items:flex-start;
+      flex-wrap: wrap;
+      margin-bottom: .05rem;
+    }
+    .meta .left p{
+      margin: .18rem 0 0;
+      color: var(--muted);
+      font-weight: 650;
+      font-size: .92rem;
+    }
+    .pill{
+      display:inline-flex;
+      gap:.45rem;
+      align-items:center;
+      padding:.16rem .52rem;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: .8rem;
+      color: rgba(15,23,42,.78);
+      background: rgba(255,255,255,.55);
+      border: 1px solid rgba(255,255,255,.25);
+    }
+
+    .controls{
+      display:flex;
+      gap:.45rem;
+      flex-wrap: wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    button{
+      font: inherit;
+      cursor: pointer;
+      border-radius: 12px;
+      border: 1px solid rgba(15,23,42,.16);
+      background: rgba(255,255,255,.75);
+      padding: .42rem .68rem;
+      font-weight: 900;
+      transition: transform 150ms ease, background-color 150ms ease;
+      font-size: .9rem;
+    }
+    button:hover{ transform: translateY(-1px); background: rgba(255,255,255,.90); }
+
+    /* ===== Grid (Wordle-sized) ===== */
+    .grid{
+      width: min(360px, 100%);
+      margin: 0 auto;
+      display:grid;
+      grid-template-rows: repeat(6, 1fr);
+      gap: .38rem;
+      min-height: 0;
+    }
+    .row{
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: .38rem;
+    }
+    .tile{
+      aspect-ratio: 1 / 1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius: 10px;
+      border: 1px solid var(--tile-border);
+      background: var(--tile);
+      font-weight: 950;
+      font-size: 1.05rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      user-select: none;
+    }
+    .tile.filled{ border-color: rgba(15,23,42,.26); }
+
+    .tile.flip{ animation: flip 520ms ease forwards; }
+    @keyframes flip{
+      0%   { transform: rotateX(0deg); }
+      49%  { transform: rotateX(90deg); }
+      100% { transform: rotateX(0deg); }
+    }
+
+    .tile.absent  { background: rgba(148,163,184,.85); color:#0b1220; }
+    .tile.present { background: rgba(245,158,11,.88); color:#0b1220; }
+    .tile.correct { background: rgba(34,197,94,.86); color:#0b1220; }
+
+    .message{
+      width: min(560px, 100%);
+      margin: 0 auto;
+      padding: .52rem .72rem;
+      border-radius: 12px;
+      border: 1px dashed rgba(15,23,42,.22);
+      background: rgba(255,255,255,.55);
+      color: rgba(15,23,42,.82);
+      font-weight: 800;
+      min-height: 40px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: .6rem;
+      flex-wrap: wrap;
+      font-size: .92rem;
+    }
+    .message small{
+      color: rgba(15,23,42,.65);
+      font-weight: 750;
+      font-size: .82rem;
+    }
+
+    /* ===== Keyboard (Wordle-sized, centered) ===== */
+    .kbd{
+      width: min(620px, 100%);
+      margin: 0 auto;
+      display:grid;
+      gap: .35rem;
+      min-height: 0;
+    }
+    .kbd-row{
+      display:flex;
+      gap: .32rem;
+      justify-content:center;
+      flex-wrap: nowrap;
+    }
+    .key{
+      padding: .48rem .38rem;
+      border-radius: 10px;
+      border: 1px solid rgba(15,23,42,.16);
+      background: rgba(255,255,255,.75);
+      font-weight: 950;
+      min-width: 36px;
+      text-transform: uppercase;
+      user-select: none;
+      transition: transform 120ms ease, background-color 120ms ease;
+      font-size: .9rem;
+    }
+    .key:hover{ transform: translateY(-1px); background: rgba(255,255,255,.92); }
+    .key.wide{
+      min-width: 74px;
+      padding-left: .6rem;
+      padding-right: .6rem;
+      font-size: .85rem;
+    }
+
+    .key.absent  { background: rgba(148,163,184,.85); }
+    .key.present { background: rgba(245,158,11,.88); }
+    .key.correct { background: rgba(34,197,94,.86); }
+
+    /* Shake */
+    .shake{ animation: shake 300ms ease; }
+    @keyframes shake{
+      0%,100%{ transform: translateX(0); }
+      25%{ transform: translateX(-7px); }
+      50%{ transform: translateX(7px); }
+      75%{ transform: translateX(-5px); }
+    }
+
+    footer{
+      text-align:center;
+      padding: .5rem 1rem .65rem;
+      color: rgba(255,255,255,.92);
+      text-shadow: 0 2px 14px rgba(2,6,23,.45);
+      font-weight: 750;
+      font-size: .85rem;
+    }
+
+    @media (max-width: 420px){
+      .grid{ width: min(320px, 100%); }
+      .key{ min-width: 32px; }
+      .key.wide{ min-width: 66px; }
+    }
+  </style>
+</head>
+
+<body class="bg-football">
+  <div class="wrap">
+    <header>
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>Sportle</h1>
+            <span>5-letter sports answers • theme switches each guess</span>
+          </div>
+        </div>
+
+        <nav class="nav" aria-label="Site navigation">
+          <a href="index.html">Home</a>
+          <a href="scratch.html">Scratch</a>
+          <a href="resume.html">Résumé</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel" aria-label="Sportle game">
+        <div class="meta">
+          <div class="left">
+            <div class="pill" id="themePill">Theme: Football Field</div>
+            <p>Guess the <strong>5-letter</strong> sports word in 6 tries.</p>
+          </div>
+          <div class="controls">
+            <button id="newBtn" title="New puzzle">New</button>
+            <button id="helpBtn" title="How to play">Help</button>
+          </div>
+        </div>
+
+        <div class="grid" id="grid" aria-label="Guess grid"></div>
+
+        <div class="message" id="msg">
+          <span>Type letters. Press <strong>Enter</strong> to submit.</span>
+          <small>Enter submit • Backspace delete</small>
+        </div>
+
+        <div class="kbd" id="keyboard" aria-label="On-screen keyboard"></div>
+      </section>
+    </main>
+
+    <footer>
+      Single-file app (HTML/CSS/JS) • Sportle
+    </footer>
+  </div>
+
+  <script>
+    // ===== Answers (sports-related, 5 letters) =====
+    const ANSWERS = [
+      "COURT","HOOPS","SCORE","GOALS","PITCH","FIELD","RUGBY","SKATE","TRACK",
+      "DRAFT","ARENA","COACH","BATON","DERBY","SPIKE","STEAL","RALLY","SERVE","DRIVE"
+    ];
+
+    const THEMES = [
+      { cls: "bg-football", name: "Football Field" },
+      { cls: "bg-basketball", name: "Basketball Court" },
+      { cls: "bg-baseball", name: "Baseball Diamond" },
+      { cls: "bg-hockey", name: "Hockey Rink" }
+    ];
+
+    const ROWS = 6, COLS = 5;
+
+    let answer = pickAnswer();
+    let currentRow = 0;
+    let currentCol = 0;
+    let isLocked = false;
+    let themeIndex = 0;
+
+    const gridEl = document.getElementById("grid");
+    const msgEl = document.getElementById("msg");
+    const keyboardEl = document.getElementById("keyboard");
+    const themePill = document.getElementById("themePill");
+    const newBtn = document.getElementById("newBtn");
+    const helpBtn = document.getElementById("helpBtn");
+
+    const tiles = [];
+    const keyButtons = new Map(); // letter -> button
+    const keyState = new Map();   // letter -> absent/present/correct (keeps best)
+
+    buildGrid();
+    buildKeyboard();
+    updateThemePill();
+
+    newBtn.addEventListener("click", () => resetGame(true));
+    helpBtn.addEventListener("click", showHelp);
+
+    document.addEventListener("keydown", (e) => {
+      if (isLocked) return;
+
+      const k = e.key;
+      if (k === "Enter") submitGuess();
+      else if (k === "Backspace") removeLetter();
+      else if (/^[a-zA-Z]$/.test(k)) addLetter(k.toUpperCase());
+    });
+
+    function buildGrid(){
+      gridEl.innerHTML = "";
+      tiles.length = 0;
+
+      for (let r = 0; r < ROWS; r++){
+        const row = document.createElement("div");
+        row.className = "row";
+        const rowTiles = [];
+
+        for (let c = 0; c < COLS; c++){
+          const t = document.createElement("div");
+          t.className = "tile";
+          t.textContent = "";
+          row.appendChild(t);
+          rowTiles.push(t);
+        }
+
+        gridEl.appendChild(row);
+        tiles.push(rowTiles);
+      }
+    }
+
+    function buildKeyboard(){
+      keyboardEl.innerHTML = "";
+      keyButtons.clear();
+
+      const layout = [
+        ["Q","W","E","R","T","Y","U","I","O","P"],
+        ["A","S","D","F","G","H","J","K","L"],
+        ["ENTER","Z","X","C","V","B","N","M","⌫"]
+      ];
+
+      layout.forEach((row) => {
+        const rowEl = document.createElement("div");
+        rowEl.className = "kbd-row";
+
+        row.forEach((key) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "key" + ((key === "ENTER" || key === "⌫") ? " wide" : "");
+          btn.textContent = key;
+
+          btn.addEventListener("click", () => {
+            if (isLocked) return;
+            if (key === "ENTER") submitGuess();
+            else if (key === "⌫") removeLetter();
+            else addLetter(key);
+          });
+
+          rowEl.appendChild(btn);
+
+          if (key.length === 1) keyButtons.set(key, btn);
+        });
+
+        keyboardEl.appendChild(rowEl);
+      });
+    }
+
+    function addLetter(letter){
+      if (currentCol >= COLS) return;
+      const tile = tiles[currentRow][currentCol];
+      tile.textContent = letter;
+      tile.classList.add("filled");
+      currentCol++;
+      setMessage("Type letters. Press Enter to submit.");
+    }
+
+    function removeLetter(){
+      if (currentCol <= 0) return;
+      currentCol--;
+      const tile = tiles[currentRow][currentCol];
+      tile.textContent = "";
+      tile.classList.remove("filled","absent","present","correct","flip");
+      setMessage("Type letters. Press Enter to submit.");
+    }
+
+    function submitGuess(){
+      if (currentCol < COLS) {
+        shakeRow(currentRow);
+        setMessage("Not enough letters. Guess must be 5 letters.");
+        return;
+      }
+
+      const guess = getRowText(currentRow);
+
+      // Accept ANY 5-letter guess (no dictionary check)
+      isLocked = true;
+
+      const result = scoreGuess(guess, answer);
+      flipRow(currentRow, result).then(() => {
+        applyKeyboard(guess, result);
+        rotateTheme();
+
+        if (guess === answer) {
+          setMessage(`✅ You got it: "${answer}". Click New to play again.`);
+          isLocked = true;
+          return;
+        }
+
+        currentRow++;
+        currentCol = 0;
+
+        if (currentRow >= ROWS) {
+          setMessage(`❌ Out of guesses. Answer was: "${answer}". Click New to try again.`);
+          isLocked = true;
+          return;
+        }
+
+        isLocked = false;
+        setMessage("Next guess!");
+      });
+    }
+
+    function scoreGuess(guess, answer){
+      // Wordle scoring with duplicate handling
+      const res = Array(COLS).fill("absent");
+      const ans = answer.split("");
+      const used = Array(COLS).fill(false);
+
+      // pass 1: correct
+      for (let i = 0; i < COLS; i++){
+        if (guess[i] === ans[i]) {
+          res[i] = "correct";
+          used[i] = true;
+        }
+      }
+
+      // pass 2: present
+      for (let i = 0; i < COLS; i++){
+        if (res[i] === "correct") continue;
+        const idx = ans.findIndex((ch, j) => ch === guess[i] && !used[j]);
+        if (idx !== -1) {
+          res[i] = "present";
+          used[idx] = true;
+        }
+      }
+      return res;
+    }
+
+    function flipRow(r, result){
+      return new Promise((resolve) => {
+        const rowTiles = tiles[r];
+        let done = 0;
+
+        rowTiles.forEach((tile, i) => {
+          tile.classList.remove("absent","present","correct");
+          tile.classList.add("flip");
+
+          setTimeout(() => {
+            tile.classList.add(result[i]);
+            done++;
+            if (done === COLS) setTimeout(resolve, 140);
+          }, 170 + i * 85);
+        });
+      });
+    }
+
+    function applyKeyboard(guess, result){
+      // keep best state per key (correct > present > absent)
+      const rank = (s) => (s === "correct" ? 3 : s === "present" ? 2 : s === "absent" ? 1 : 0);
+
+      for (let i = 0; i < COLS; i++){
+        const ch = guess[i];
+        const next = result[i];
+        const prev = keyState.get(ch);
+
+        if (!prev || rank(next) > rank(prev)) {
+          keyState.set(ch, next);
+          const btn = keyButtons.get(ch);
+          if (btn) {
+            btn.classList.remove("absent","present","correct");
+            btn.classList.add(next);
+          }
+        }
+      }
+    }
+
+    function rotateTheme(){
+      document.body.classList.add("theme-fade");
+      document.body.classList.remove(THEMES[themeIndex].cls);
+
+      themeIndex = (themeIndex + 1) % THEMES.length;
+      document.body.classList.add(THEMES[themeIndex].cls);
+      updateThemePill();
+
+      setTimeout(() => document.body.classList.remove("theme-fade"), 280);
+    }
+
+    function updateThemePill(){
+      themePill.textContent = `Theme: ${THEMES[themeIndex].name}`;
+    }
+
+    function getRowText(r){
+      return tiles[r].map(t => (t.textContent || "")).join("");
+    }
+
+    function shakeRow(r){
+      const rowEl = gridEl.children[r];
+      rowEl.classList.remove("shake");
+      void rowEl.offsetWidth;
+      rowEl.classList.add("shake");
+    }
+
+    function setMessage(text){
+      msgEl.querySelector("span").textContent = text;
+    }
+
+    function resetGame(announce){
+      answer = pickAnswer();
+      currentRow = 0;
+      currentCol = 0;
+      isLocked = false;
+
+      for (let r = 0; r < ROWS; r++){
+        for (let c = 0; c < COLS; c++){
+          const tile = tiles[r][c];
+          tile.textContent = "";
+          tile.className = "tile";
+        }
+      }
+
+      keyState.clear();
+      keyButtons.forEach((btn) => btn.classList.remove("absent","present","correct"));
+
+      if (announce) setMessage("New puzzle started. Type letters, then Enter.");
+    }
+
+    function showHelp(){
+      alert(
+        "How to Play Sportle:\n\n" +
+        "• Guess the 5-letter sports word in 6 tries.\n" +
+        "• Green = correct letter & position.\n" +
+        "• Yellow = correct letter, wrong position.\n" +
+        "• Gray = letter not in the word.\n\n" +
+        "This version accepts ANY 5-letter guess.\n" +
+        "Background switches after every submitted guess."
+      );
+    }
+
+    function pickAnswer(){
+      return ANSWERS[Math.floor(Math.random() * ANSWERS.length)];
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Brett Higbee | Portfolio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-dot" aria-hidden="true"></span>
+        Brett Higbee
+      </a>
+
+      <nav class="nav" aria-label="Primary navigation">
+        <a class="active" href="index.html">Home</a>
+        <a href="resume.html">Resume</a>
+        <a href="scratch.html">Scratch</a>
+        <a href="permainan.html">Sportle</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-grid">
+
+        <div class="hero-text">
+          <h1>An Interactive Digital Portfolio</h1>
+          <p class="sub">
+            This site includes my resume, a Wordle-style sports word game (Sportle), and a Basic HTML/CSS page about basketball I made from scratch.
+          </p>
+
+          <div class="stats" aria-label="Highlights">
+            <div class="stat">
+              <strong>HTML Resume</strong>
+              <span>Education • Experience • Skills</span>
+            </div>
+            <div class="stat">
+              <strong>Scratch Page</strong>
+              <span>Basic Overview of Basketball</span>
+            </div>
+            <div class="stat">
+              <strong>Sportle</strong>
+              <span>Wordle-style sports game</span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <a class="btn primary" href="resume.html">View Resume</a>
+            <a class="btn ghost" href="permainan.html">Play Sportle</a>
+            <a class="btn ghost" href="scratch.html">Scratch Page</a>
+          </div>
+        </div>
+
+        <div class="hero-image-wrapper">
+          <img
+            src="hero.jpeg"
+            alt="Brett standing under flowering trees"
+            class="hero-image"
+          />
+        </div>
+
+      </div>
+    </section>
+
+    <!-- CARDS -->
+    <section class="grid" aria-label="Pages">
+      <section class="card">
+        <h2>Resume</h2>
+        <p>My education, leadership, certifications, and technical skills — all in HTML for easy viewing.</p>
+        <a class="link" href="resume.html">Open resume →</a>
+      </section>
+
+      <section class="card">
+        <h2>Scratch Page</h2>
+        <p>A Basic Overview of the Amazing Sport of Basketball.</p>
+        <a class="link" href="scratch.html">Open scratch →</a>
+      </section>
+
+      <section class="card">
+        <h2>Sportle Web App</h2>
+        <p>Guess the 5-letter sports word with Wordle scoring and a sports-themed background switch.</p>
+        <a class="link" href="permainan.html">Open Sportle →</a>
+      </section>
+
+      <section class="card">
+        <h2>Tableau Embed</h2>
+        <p>A live interactive Tableau visualization (embedded on the scratch page).</p>
+        <a class="link" href="scratch.html#tableau">Go to Tableau section →</a>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    © <span id="year"></span> Brett Higbee
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
